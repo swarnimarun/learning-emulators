@@ -1,0 +1,15 @@
+[package]
+name = "sgfx"
+version = "0.1.0"
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[example]]
+name = "trivial"
+path = "examples/trivial.rs"
+
+[dependencies]
+wgpu  = "0.15.1"
+winit = "0.28.2"
+pollster = "0.3.0"
+anyhow = "1.0.69"
