@@ -1,0 +1,10 @@
+[package]
+name = "neo8"
+version = "0.1.0"
+edition.workspace = true
+
+[lib]
+name = "neo8"
+path = "src/lib.rs"
+
+[dependencies]
