@@ -1,7 +1,6 @@
-
 //! an API to improve event handling here!
 //! currently WIP!~!
-//! 
+//!
 //! pls don't use
 
 use std::collections::HashMap;
@@ -26,12 +25,12 @@ impl KeyInputState {
         self.is_pressed() && !self.is_repeated()
     }
     /// note that this is not the same as `is_up`
-    /// and `is_pressed` and `is_held` can be true together 
+    /// and `is_pressed` and `is_held` can be true together
     pub fn is_held(&self) -> bool {
         self.0 & 4 != 0 // if the third bit is set, it's held
     }
     /// when the key is free, note that this is not the same as `is_held`
-    /// and `is_released` and `is_up` can be true together 
+    /// and `is_released` and `is_up` can be true together
     pub fn is_up(&self) -> bool {
         !self.is_pressed() && !self.is_repeated()
     }
@@ -57,5 +56,5 @@ pub struct InputQueue {}
 pub struct EventHandler {
     pub key_state: KeyState,
     pub mouse_state: MouseState,
-    pub input_queue: InputQueue, // stores input history to allow for checking things like mouse move delta and 
+    pub input_queue: InputQueue, // stores input history to allow for checking things like mouse move delta and
 }

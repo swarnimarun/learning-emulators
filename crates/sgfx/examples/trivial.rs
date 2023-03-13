@@ -127,10 +127,8 @@
 use anyhow::Context;
 use sgfx::{self, renderer::RectBound, shader::Shader};
 
-
 // WE GOT TO OUR FIRST TRIANGLE with a WEBGPU Renderer!
 // ----------------------------------------------------
-
 
 fn main() -> anyhow::Result<()> {
     let event_loop = winit::event_loop::EventLoop::new();

@@ -13,10 +13,12 @@ impl Shader {
     pub fn new(renderer: &renderer::Renderer, source: impl AsRef<str>) -> Self {
         let shader_source = wgpu::ShaderSource::Wgsl(std::borrow::Cow::from(source.as_ref()));
         Self {
-            shader_module: renderer.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: None,
-                source: shader_source,
-            }),
+            shader_module: renderer
+                .device
+                .create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label: None,
+                    source: shader_source,
+                }),
         }
     }
 }
