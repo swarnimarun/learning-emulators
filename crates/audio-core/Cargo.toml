@@ -1,10 +1,7 @@
 [package]
-name = "neo8"
+name = "audio-core"
 version = "0.1.0"
+authors.workspace = true
 edition.workspace = true
-
-[lib]
-name = "neo8"
-path = "src/lib.rs"
 
 [dependencies]
