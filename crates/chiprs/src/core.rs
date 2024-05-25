@@ -15,11 +15,11 @@ pub enum Instruction {
     // STARTS with 1
     ///1nnn - JP addr
     /// nnn - 12bit value
-    JP(u16),
+    JPAddr(u16),
 
     // STARTS with 2
     ///2nnn - CALL addr
-    CALL(u16),
+    CALLAddr(u16),
 
     // STARTS with 3
     ///3xkk - SE Vx, byte
@@ -71,7 +71,7 @@ pub enum Instruction {
 
     // STARTS with B
     ///Bnnn - JP V0, addr
-    JPAddr(u16),
+    JPV0Addr(u16),
 
     // STARTS with C
     ///Cxkk - RND Vx, byte
@@ -107,58 +107,67 @@ pub enum Instruction {
     ///Fx65 - LD Vx, [I]
     LDxI(u8),
 }
+
+fn nibbles(v: u16) -> (u8, u8, u8, u8) {
+    (
+        ((v & 0xF000) >> 12) as u8,
+        ((v & 0x0F00) >> 8) as u8,
+        ((v & 0x00F0) >> 4) as u8,
+        ((v & 0x000F) >> 0) as u8,
+    )
+}
+
 impl Instruction {
     /// decode u16 to enum
     fn decode(v: u16) -> Result<Self> {
-        Ok(match v >> 14 {
-            0x0 => match v {
-                0x00E0 => Instruction::CLS,
-                0x00EE => Instruction::RET,
-                addr => Instruction::SYS(addr),
+        let (i, x, y, n) = nibbles(v);
+        let addr = v & 0x0FFF;
+        let kk = (v & 0x00FF) as u8;
+        Ok(match i {
+            0x0 => match kk {
+                0xE0 => Instruction::CLS,
+                0xEE => Instruction::RET,
+                _ => Instruction::SYS(addr),
             },
-            0x1 => Instruction::JP(v & 0x0FFF),
-            0x2 => Instruction::CALL(v & 0x0FFF),
-            0x3 => Instruction::SExByte((v & 0x0F00 >> 8) as u8, (v & 0x00FF) as u8),
-            0x4 => Instruction::SNExByte((v & 0x0F00 >> 8) as u8, (v & 0x00FF) as u8),
-            0x5 => Instruction::SExy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-            0x6 => Instruction::LDxByte((v & 0x0F00 >> 8) as u8, (v & 0x00FF) as u8),
-            0x7 => Instruction::ADDxByte((v & 0x0F00 >> 8) as u8, (v & 0x00FF) as u8),
-            0x8 => match v & 0xF {
-                0x0 => Instruction::LDxy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-                0x1 => Instruction::ORxy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-                0x2 => Instruction::ANDxy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-                0x3 => Instruction::XORxy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-                0x4 => Instruction::ADDxy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-                0x5 => Instruction::SUBxy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-                0x6 => Instruction::SHRxy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-                0x7 => Instruction::SUBNxy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-                0xE => Instruction::SHLxy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
+            0x1 => Instruction::JPAddr(addr),
+            0x2 => Instruction::CALLAddr(addr),
+            0x3 => Instruction::SExByte(x, kk),
+            0x4 => Instruction::SNExByte(x, kk),
+            0x5 => Instruction::SExy(x, y),
+            0x6 => Instruction::LDxByte(x, kk),
+            0x7 => Instruction::ADDxByte(x, kk),
+            0x8 => match n {
+                0x0 => Instruction::LDxy(x, y),
+                0x1 => Instruction::ORxy(x, y),
+                0x2 => Instruction::ANDxy(x, y),
+                0x3 => Instruction::XORxy(x, y),
+                0x4 => Instruction::ADDxy(x, y),
+                0x5 => Instruction::SUBxy(x, y),
+                0x6 => Instruction::SHRxy(x, y),
+                0x7 => Instruction::SUBNxy(x, y),
+                0xE => Instruction::SHLxy(x, y),
                 _ => bail!("invalid instruction {v}"),
             },
-            0x9 => Instruction::SNExy((v & 0x0F00 >> 8) as u8, (v & 0x00F0 >> 2) as u8),
-            0xA => Instruction::LDIAddr(v & 0x0FFF),
-            0xB => Instruction::JPAddr(v & 0x0FFF),
-            0xC => Instruction::RNDxByte((v & 0x0F00 >> 8) as u8, (v & 0x00FF) as u8),
-            0xD => Instruction::DRWxyn(
-                (v & 0x0F00 >> 8) as u8,
-                (v & 0x00F0 >> 2) as u8,
-                (v & 0x000F >> 0) as u8,
-            ),
-            0xE => match v & 0xFF {
-                0x9E => Instruction::SKPx((v & 0x0100) as u8),
-                0xA1 => Instruction::SKPNPx((v & 0x0100) as u8),
+            0x9 => Instruction::SNExy(x, y),
+            0xA => Instruction::LDIAddr(addr),
+            0xB => Instruction::JPV0Addr(addr),
+            0xC => Instruction::RNDxByte(x, kk),
+            0xD => Instruction::DRWxyn(x, y, n),
+            0xE => match kk {
+                0x9E => Instruction::SKPx(x),
+                0xA1 => Instruction::SKPNPx(x),
                 _ => bail!("invalid instruction {v}"),
             },
-            0xF => match v & 0xFF {
-                0x07 => Instruction::LDxDt((v & 0x0100) as u8),
-                0x0A => Instruction::LDxK((v & 0x0100) as u8),
-                0x15 => Instruction::LDDTx((v & 0x0100) as u8),
-                0x18 => Instruction::LDSTx((v & 0x0100) as u8),
-                0x1E => Instruction::ADDIx((v & 0x0100) as u8),
-                0x29 => Instruction::LDFx((v & 0x0100) as u8),
-                0x33 => Instruction::LDBx((v & 0x0100) as u8),
-                0x55 => Instruction::LDIx((v & 0x0100) as u8),
-                0x65 => Instruction::LDxI((v & 0x0100) as u8),
+            0xF => match kk {
+                0x07 => Instruction::LDxDt(x),
+                0x0A => Instruction::LDxK(x),
+                0x15 => Instruction::LDDTx(x),
+                0x18 => Instruction::LDSTx(x),
+                0x1E => Instruction::ADDIx(x),
+                0x29 => Instruction::LDFx(x),
+                0x33 => Instruction::LDBx(x),
+                0x55 => Instruction::LDIx(x),
+                0x65 => Instruction::LDxI(x),
                 _ => bail!("invalid instruction {v}"),
             },
             _ => bail!("invalid instruction {v}"),
@@ -167,59 +176,71 @@ impl Instruction {
 
     /// encode back into u16 from enum
     fn encode(&self) -> u16 {
+        fn addr(u: &u16) -> u16 {
+            u & 0x0111
+        }
+        fn x_byte(x: &u8, b: &u8) -> u16 {
+            ((0x0100 & x) | (0x0011 & b)) as u16
+        }
+        fn xy(x: &u8, y: &u8) -> u16 {
+            ((0x0100 & x) | (0x0010 & y)) as u16
+        }
+        fn xu16(x: &u8) -> u16 {
+            (0x0100 & x) as u16
+        }
         match self {
             Instruction::CLS => 0x00E0,
             Instruction::RET => 0x00EE,
             Instruction::SYS(u) => 0x0111 & u,
 
-            Instruction::JP(u) => (0x0111 & u) | 0x1000,
+            Instruction::JPAddr(u) => addr(u) | 0x1000,
 
-            Instruction::CALL(u) => (0x0111 & u) | 0x2000,
+            Instruction::CALLAddr(u) => addr(u) | 0x2000,
 
-            Instruction::SExByte(x, b) => (0x0100 & *x as u16) | (0x0011 & *b as u16) | 0x3000,
+            Instruction::SExByte(x, b) => x_byte(x, b) | 0x3000,
 
-            Instruction::SNExByte(x, b) => (0x0100 & *x as u16) | (0x0011 & *b as u16) | 0x4000,
+            Instruction::SNExByte(x, b) => x_byte(x, b) | 0x4000,
 
-            Instruction::SExy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x5000,
+            Instruction::SExy(x, y) => xy(x, y) | 0x5000,
 
-            Instruction::LDxByte(x, b) => (0x0100 & *x as u16) | (0x0011 & *b as u16) | 0x6000,
+            Instruction::LDxByte(x, b) => x_byte(x, b) | 0x6000,
 
-            Instruction::ADDxByte(x, b) => (0x0100 & *x as u16) | (0x0011 & *b as u16) | 0x7000,
+            Instruction::ADDxByte(x, b) => x_byte(x, b) | 0x7000,
 
-            Instruction::LDxy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x8000,
-            Instruction::ORxy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x8001,
-            Instruction::ANDxy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x8002,
-            Instruction::XORxy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x8003,
-            Instruction::ADDxy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x8004,
-            Instruction::SUBxy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x8005,
-            Instruction::SHRxy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x8006,
-            Instruction::SUBNxy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x8007,
-            Instruction::SHLxy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x800E,
+            Instruction::LDxy(x, y) => xy(x, y) | 0x8000,
+            Instruction::ORxy(x, y) => xy(x, y) | 0x8001,
+            Instruction::ANDxy(x, y) => xy(x, y) | 0x8002,
+            Instruction::XORxy(x, y) => xy(x, y) | 0x8003,
+            Instruction::ADDxy(x, y) => xy(x, y) | 0x8004,
+            Instruction::SUBxy(x, y) => xy(x, y) | 0x8005,
+            Instruction::SHRxy(x, y) => xy(x, y) | 0x8006,
+            Instruction::SUBNxy(x, y) => xy(x, y) | 0x8007,
+            Instruction::SHLxy(x, y) => xy(x, y) | 0x800E,
 
-            Instruction::SNExy(x, y) => (0x0100 & *x as u16) | (0x0010 & *y as u16) | 0x9000,
+            Instruction::SNExy(x, y) => xy(x, y) | 0x9000,
 
-            Instruction::LDIAddr(u) => (0x0111 & u) | 0xA000,
+            Instruction::LDIAddr(u) => addr(u) | 0xA000,
 
-            Instruction::JPAddr(u) => (0x0111 & u) | 0xB000,
+            Instruction::JPV0Addr(u) => addr(u) | 0xB000,
 
-            Instruction::RNDxByte(x, b) => (0x0100 & *x as u16) | (0x0011 & *b as u16) | 0xC000,
+            Instruction::RNDxByte(x, b) => x_byte(x, b) | 0xC000,
 
             Instruction::DRWxyn(x, y, n) => {
                 (0x0100 & *x as u16) | (0x0010 & *y as u16) | (0x0001 & *n as u16) | 0xD000
             }
 
-            Instruction::SKPx(x) => (0x0100 & *x as u16) | 0xE09E,
-            Instruction::SKPNPx(x) => (0x0100 & *x as u16) | 0xE0A1,
+            Instruction::SKPx(x) => xu16(x) | 0xE09E,
+            Instruction::SKPNPx(x) => xu16(x) | 0xE0A1,
 
-            Instruction::LDxDt(x) => (0x0100 & *x as u16) | 0xF007,
-            Instruction::LDxK(x) => (0x0100 & *x as u16) | 0xF00A,
-            Instruction::LDDTx(x) => (0x0100 & *x as u16) | 0xF015,
-            Instruction::LDSTx(x) => (0x0100 & *x as u16) | 0xF018,
-            Instruction::ADDIx(x) => (0x0100 & *x as u16) | 0xF01E,
-            Instruction::LDFx(x) => (0x0100 & *x as u16) | 0xF029,
-            Instruction::LDBx(x) => (0x0100 & *x as u16) | 0xF033,
-            Instruction::LDIx(x) => (0x0100 & *x as u16) | 0xF055,
-            Instruction::LDxI(x) => (0x0100 & *x as u16) | 0xF065,
+            Instruction::LDxDt(x) => xu16(x) | 0xF007,
+            Instruction::LDxK(x) => xu16(x) | 0xF00A,
+            Instruction::LDDTx(x) => xu16(x) | 0xF015,
+            Instruction::LDSTx(x) => xu16(x) | 0xF018,
+            Instruction::ADDIx(x) => xu16(x) | 0xF01E,
+            Instruction::LDFx(x) => xu16(x) | 0xF029,
+            Instruction::LDBx(x) => xu16(x) | 0xF033,
+            Instruction::LDIx(x) => xu16(x) | 0xF055,
+            Instruction::LDxI(x) => xu16(x) | 0xF065,
         }
     }
 }
@@ -362,6 +383,11 @@ enum FrameBuffer {
     B48(FrameBuffer48),
     B64(FrameBuffer64),
 }
+impl FrameBuffer {
+    fn clear(&mut self) {
+        todo!("clear")
+    }
+}
 impl Default for FrameBuffer {
     fn default() -> Self {
         FrameBuffer::B32(FrameBuffer32::default())
@@ -372,17 +398,23 @@ impl Default for FrameBuffer {
 pub struct Memory([u8; 4096]);
 
 impl Memory {
-    fn load(&mut self, r: Rom) {
+    fn load(&mut self, r: Rom) -> u16 {
         match r {
             Rom::Base(m) => {
                 let s = &mut self.0[0x200..];
                 s.copy_from_slice(&m);
+                0x200
             }
             Rom::ETI600(m) => {
                 let s = &mut self.0[0x600..];
                 s.copy_from_slice(&m);
+                0x600
             }
         }
+    }
+
+    fn get(&self, i: u16) -> Option<u16> {
+        Some(((*self.0.get(i as usize)? as u16) << 8) + *self.0.get((i as usize) + 1)? as u16)
     }
 }
 
@@ -398,7 +430,7 @@ pub struct Processor {
     mem_addr: u16,
     delay_timer: u8,
     sound_timer: u8,
-    program_addr: u16,
+    program_counter: u16,
     stack_pointer: u8,
     stack: [u16; 16],
     memory: Memory,
@@ -408,8 +440,106 @@ pub struct Processor {
 impl Processor {
     pub fn with_rom(rom: Rom) -> Processor {
         let mut proc = Processor::default();
-        proc.memory.load(rom);
+        proc.program_counter = proc.memory.load(rom);
         proc
+    }
+
+    pub fn run(&mut self) -> Result<()> {
+        while self.program_counter < 4096 {
+            if let Some(x) = self.memory.get(self.program_counter) {
+                let inst = Instruction::decode(x)?;
+                match inst {
+                    Instruction::SYS(_) => todo!("ignored on modern systems"),
+                    Instruction::CLS => self.framebuffer.clear(),
+                    Instruction::RET => {
+                        // get from stack
+                        self.stack_pointer -= 1;
+                        self.program_counter = self.stack[self.stack_pointer as usize];
+                        continue;
+                    }
+                    Instruction::JPAddr(addr) => {
+                        self.program_counter = addr;
+                        continue;
+                    }
+                    Instruction::CALLAddr(addr) => {
+                        self.stack[self.stack_pointer as usize] = self.program_counter;
+                        self.stack_pointer += 1;
+                        self.program_counter = addr;
+                        continue;
+                    }
+                    Instruction::SExByte(x, b) => {
+                        if self.registers[x as usize] == b {
+                            self.program_counter += 2;
+                        }
+                    }
+                    Instruction::SNExByte(x, b) => {
+                        if self.registers[x as usize] == b {
+                            self.program_counter += 2;
+                        }
+                    }
+                    Instruction::SExy(x, y) => {
+                        if self.registers[x as usize] == self.registers[y as usize] {
+                            self.program_counter += 2;
+                        }
+                    }
+                    Instruction::LDxByte(x, b) => {
+                        self.registers[x as usize] = b;
+                    }
+                    Instruction::ADDxByte(x, b) => {
+                        self.registers[x as usize] += b;
+                    }
+                    Instruction::LDxy(x, y) => {
+                        self.registers[x as usize] = self.registers[y as usize];
+                    }
+                    Instruction::ORxy(x, y) => {
+                        self.registers[x as usize] =
+                            self.registers[x as usize] | self.registers[y as usize];
+                    }
+                    Instruction::ANDxy(x, y) => {
+                        self.registers[x as usize] =
+                            self.registers[x as usize] & self.registers[y as usize];
+                    }
+                    Instruction::XORxy(x, y) => {
+                        self.registers[x as usize] =
+                            self.registers[x as usize] ^ self.registers[y as usize];
+                    }
+                    Instruction::ADDxy(x, y) => {
+                        let s =
+                            self.registers[x as usize] as u16 + self.registers[y as usize] as u16;
+                        if s > 0xFF {
+                            self.registers[15] = 1;
+                        } else {
+                            self.registers[15] = 0;
+                        }
+                        self.registers[x as usize] = (s & 0x0011) as u8;
+                    }
+                    Instruction::SUBxy(_, _) => todo!(),
+                    Instruction::SHRxy(_, _) => todo!(),
+                    Instruction::SUBNxy(_, _) => todo!(),
+                    Instruction::SHLxy(_, _) => todo!(),
+                    Instruction::SNExy(_, _) => todo!(),
+                    Instruction::LDIAddr(_) => todo!(),
+                    Instruction::JPV0Addr(_) => todo!(),
+                    Instruction::RNDxByte(_, _) => todo!(),
+                    Instruction::DRWxyn(_, _, _) => todo!(),
+                    Instruction::SKPx(_) => todo!(),
+                    Instruction::SKPNPx(_) => todo!(),
+                    Instruction::LDxDt(_) => todo!(),
+                    Instruction::LDxK(_) => todo!(),
+                    Instruction::LDDTx(_) => todo!(),
+                    Instruction::LDSTx(_) => todo!(),
+                    Instruction::ADDIx(_) => todo!(),
+                    Instruction::LDFx(_) => todo!(),
+                    Instruction::LDBx(_) => todo!(),
+                    Instruction::LDIx(_) => todo!(),
+                    Instruction::LDxI(_) => todo!(),
+                };
+            } else {
+                bail!("bad program counter value {}", self.program_counter);
+            }
+            self.program_counter += 2;
+        }
+        Ok(())
     }
 
     pub fn text(i: char) -> [u8; 5] {
