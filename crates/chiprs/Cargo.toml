@@ -4,10 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+bit_field = "0.10.2"
 clap = { version = "4.5.4", features = ["string", "env", "derive"] }
 color-eyre = "0.6.3"
 graphic-core = { path = "../graphic-core", optional = true }
 pixels = { version = "0.13.0", optional = true }
+rand = "0.8.5"
+tracing = { version = "0.1.40", features = ["log"] }
+winit = { version = "0.30.0", features = ["rwh_05"] }
 
 [features]
 default = ["pixels"]

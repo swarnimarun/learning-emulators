@@ -5,7 +5,9 @@ use std::path::PathBuf;
 use clap::Parser;
 use color_eyre::Result;
 
-#[derive(Parser)]
+use tracing::{info, instrument};
+
+#[derive(Parser, Debug)]
 pub struct App {
     rom: PathBuf,
     #[clap(skip)]
@@ -13,6 +15,7 @@ pub struct App {
 }
 
 impl App {
+    #[instrument(name = "chiprs::App::init")]
     pub fn init(&mut self) -> Result<()> {
         _ = self
             .processor
