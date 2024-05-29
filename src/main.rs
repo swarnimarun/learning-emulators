@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use color_eyre::Result;
-use tracing::{info, level_filters::LevelFilter};
+use tracing::{info, instrument, level_filters::LevelFilter};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
@@ -16,6 +16,7 @@ enum Commands {
     Gameboy(gamebors::App),
 }
 
+#[instrument]
 pub fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_target(true)
@@ -31,14 +32,15 @@ pub fn main() -> Result<()> {
         })
         .init();
 
-    info!(target: "function");
-
     let app = App::parse();
     match app.subcommands {
         Commands::Nes(nes) => nes.start(),
         Commands::Chip8(mut chip8) => {
+            info!(
+                rom_path = chip8.rom.display().to_string(),
+                "chiprs emulator: "
+            );
             chip8.init()?;
-            chip8.run();
         }
         Commands::Gameboy(gb) => gb.start(),
     }

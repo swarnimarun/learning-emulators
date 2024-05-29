@@ -20,6 +20,11 @@ impl Rom {
                 arr.copy_from_slice(&f[..2560]);
                 Ok(Rom::ETI600(arr))
             }
+            x if x < 3584 && x > 0 => {
+                let mut arr = [0; 3584];
+                arr[..x].copy_from_slice(&f[..x]);
+                Ok(Rom::Base(arr))
+            }
             _ => Err(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 "Not-Valid ROM file.",

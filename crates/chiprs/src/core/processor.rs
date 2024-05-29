@@ -38,6 +38,11 @@ impl Default for Memory {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct RendererState {
+    pub instant: Option<std::time::Instant>,
+}
+
 #[derive(Default, Debug)]
 pub struct Processor {
     registers: [u8; 16],
@@ -59,10 +64,15 @@ impl Processor {
         proc
     }
 
-    pub fn run(&mut self, window: &winit::window::Window) -> Result<()> {
+    pub fn run(&mut self, window: &winit::window::Window, rs: &mut RendererState) -> Result<()> {
         if self.framebuffer.is_none() {
-            self.framebuffer.insert(FrameBuffer::new(window)?);
+            _ = self.framebuffer.insert(FrameBuffer::new(window)?);
         }
+        let Some(instant) = rs.instant.take() else {
+            bail!("time not present");
+        };
+        let dt = instant.elapsed();
+        _ = rs.instant.insert(std::time::Instant::now());
         while self.program_counter < 4096 {
             if let Some(x) = self.memory.get(self.program_counter) {
                 let inst = Instruction::decode(x)?;

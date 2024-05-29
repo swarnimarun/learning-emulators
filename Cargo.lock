@@ -1149,6 +1149,7 @@ dependencies = [
  "res",
  "tracing",
  "tracing-subscriber",
+ "winit",
 ]
 
 [[package]]
