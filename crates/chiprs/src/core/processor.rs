@@ -64,7 +64,15 @@ impl Processor {
         proc
     }
 
+    /// run processor for a single op
     pub fn run(&mut self, window: &winit::window::Window, rs: &mut RendererState) -> Result<()> {
+        tracing::info!(
+            regs = format!("{:?}", self.registers),
+            mem_addr = self.i,
+            program_counter = self.program_counter,
+            stack = format!("{:?}", self.stack),
+            stack_pointer = self.stack_pointer,
+        );
         if self.framebuffer.is_none() {
             _ = self.framebuffer.insert(FrameBuffer::new(window)?);
         }

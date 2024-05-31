@@ -16,21 +16,24 @@ impl FrameBuffer {
         let mut f = false;
         let frame = self.p.frame_mut();
         let width = self.width;
-        //for (rowIdx, row) in frame.chunks_exact_mut(width as usize * 4).enumerate() {
-        //    for (colIdx, pixel) in row.chunks_exact_mut(4).enumerate() {
-        //        if colIdx >= x.into()
-        //            && (colIdx < x as usize + 8)
-        //            && rowIdx >= y.into()
-        //            && (rowIdx < y as usize + ns.len())
-        //        {
-        //            // pixel_draw()
-        //        }
-        //        //for xi in 0..8 {
-        //        //    f = f || collide_get(&mut x.data[k as usize + i], *n, j, xi);
-        //        //}
-        //    }
-        //}
-        self.p.render();
+        for (row_idx, row) in frame.chunks_exact_mut(width as usize * 4).enumerate() {
+            for (col_idx, pixel) in row.chunks_exact_mut(4).enumerate() {
+                if col_idx >= x.into()
+                    && (col_idx < x as usize + 8)
+                    && row_idx >= y.into()
+                    && (row_idx < y as usize + ns.len())
+                {
+                    pixel[0] = 100;
+                    pixel[1] = 100;
+                    pixel[2] = 100;
+                    pixel[3] = 255;
+                }
+                //for xi in 0..8 {
+                //    f = f || collide_get(&mut x.data[k as usize + i], *n, j, xi);
+                //}
+            }
+        }
+        _ = self.p.render();
         f
     }
     pub fn new(window: &winit::window::Window) -> Result<Self> {
