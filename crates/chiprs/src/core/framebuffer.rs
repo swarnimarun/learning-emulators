@@ -16,20 +16,20 @@ impl FrameBuffer {
         let mut f = false;
         let frame = self.p.frame_mut();
         let width = self.width;
-        for (rowIdx, row) in frame.chunks_exact_mut(width as usize * 4).enumerate() {
-            for (colIdx, pixel) in row.chunks_exact_mut(4).enumerate() {
-                if colIdx >= x.into()
-                    && (colIdx < x as usize + 8)
-                    && rowIdx >= y.into()
-                    && (rowIdx < y as usize + ns.len())
-                {
-                    // pixel_draw()
-                }
-                //for xi in 0..8 {
-                //    f = f || collide_get(&mut x.data[k as usize + i], *n, j, xi);
-                //}
-            }
-        }
+        //for (rowIdx, row) in frame.chunks_exact_mut(width as usize * 4).enumerate() {
+        //    for (colIdx, pixel) in row.chunks_exact_mut(4).enumerate() {
+        //        if colIdx >= x.into()
+        //            && (colIdx < x as usize + 8)
+        //            && rowIdx >= y.into()
+        //            && (rowIdx < y as usize + ns.len())
+        //        {
+        //            // pixel_draw()
+        //        }
+        //        //for xi in 0..8 {
+        //        //    f = f || collide_get(&mut x.data[k as usize + i], *n, j, xi);
+        //        //}
+        //    }
+        //}
         self.p.render();
         f
     }
@@ -56,5 +56,6 @@ impl FrameBuffer {
             b: 0.0,
             a: 1.0,
         });
+        _ = self.p.render();
     }
 }

@@ -44,9 +44,14 @@ impl App {
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         if self.window.is_none() {
-            if let Ok(w) =
-                event_loop.create_window(WindowAttributes::default().with_title("chiprs-app"))
-            {
+            if let Ok(w) = event_loop.create_window(
+                WindowAttributes::default()
+                    .with_title("chiprs app")
+                    .with_active(true)
+                    .with_visible(true)
+                    .with_resizable(true),
+            ) {
+                info!("window created: {:?}", w.id());
                 _ = self.window.insert(w);
             }
         } else {
