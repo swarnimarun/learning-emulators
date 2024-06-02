@@ -13,6 +13,8 @@ use winit::{
 #[derive(Parser, Debug)]
 pub struct App {
     pub rom: PathBuf,
+    #[arg(short, long, alias = "di", default_value_t = false)]
+    pub disassemble: bool,
     #[clap(skip)]
     processor: Option<Processor>,
     #[clap(skip)]
@@ -26,6 +28,12 @@ pub struct App {
 type EventMap = HashMap<KeyCode, KeyEvent>;
 
 impl App {
+    #[instrument]
+    pub fn disassemble_rom(self) -> Result<()> {
+        info!("disassembling the rom, {}", self.rom.display());
+        Rom::load_from_path(&self.rom)?.rom_disassemble()
+    }
+
     #[instrument]
     pub fn init(&mut self) -> Result<()> {
         info!(
@@ -71,6 +79,7 @@ impl ApplicationHandler for App {
             window,
             events: _,
             state,
+            ..
         } = self;
 
         let Some(window) = window else {

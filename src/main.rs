@@ -37,6 +37,10 @@ pub fn main() -> Result<()> {
     match app.subcommands {
         Commands::Nes(nes) => nes.start(),
         Commands::Chip8(mut chip8) => {
+            if chip8.disassemble {
+                chip8.disassemble_rom();
+                return Ok(());
+            }
             info!(
                 rom_path = chip8.rom.display().to_string(),
                 "chiprs emulator: "

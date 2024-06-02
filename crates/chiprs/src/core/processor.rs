@@ -14,12 +14,12 @@ impl Memory {
     }
     fn load(&mut self, r: Rom) -> u16 {
         match r {
-            Rom::Base(m) => {
+            Rom::Base(m, _) => {
                 let s = &mut self.0[0x200..];
                 s.copy_from_slice(&m);
                 0x200
             }
-            Rom::ETI600(m) => {
+            Rom::ETI600(m, _) => {
                 let s = &mut self.0[0x600..];
                 s.copy_from_slice(&m);
                 0x600
@@ -27,8 +27,8 @@ impl Memory {
         }
     }
 
-    fn get(&self, i: u16) -> Option<u16> {
-        Some(((*self.0.get(i as usize)? as u16) << 8) + *self.0.get((i as usize) + 1)? as u16)
+    fn get(&self, i: usize) -> Option<u16> {
+        Some(((self.0[i] as u16) << 8) + self.0[i + 1] as u16)
     }
 }
 
@@ -66,26 +66,28 @@ impl Processor {
 
     /// run processor for a single op
     pub fn run(&mut self, window: &winit::window::Window, rs: &mut RendererState) -> Result<()> {
-        tracing::info!(
-            regs = format!("{:?}", self.registers),
-            mem_addr = self.i,
-            program_counter = self.program_counter,
-            stack = format!("{:?}", self.stack),
-            stack_pointer = self.stack_pointer,
-        );
+        // tracing::info!(
+        //     regs = format!("{:?}", self.registers),
+        //     mem_addr = self.i,
+        //     program_counter = self.program_counter,
+        //     stack = format!("{:?}", self.stack),
+        //     stack_pointer = self.stack_pointer,
+        // );
         if self.framebuffer.is_none() {
             _ = self.framebuffer.insert(FrameBuffer::new(window)?);
         }
         self.framebuffer.as_mut().unwrap().clear();
-        let Some(instant) = rs.instant.take() else {
-            bail!("time not present");
-        };
-        let dt = instant.elapsed();
+        // let Some(instant) = rs.instant.take() else {
+        //     bail!("time not present");
+        // };
+        // let dt = instant.elapsed();
+        // let frame_time = 1.0 / dt.as_secs_f64();
+        // println!("{frame_time}");
         _ = rs.instant.insert(std::time::Instant::now());
         if self.program_counter >= 4096 {
             bail!("bad program counter value {}", self.program_counter);
         }
-        if let Some(x) = self.memory.get(self.program_counter) {
+        if let Some(x) = self.memory.get(self.program_counter as usize) {
             let inst = Instruction::decode(x)?;
             match inst {
                 Instruction::SYS(_) => todo!("ignored on modern interpreters"),

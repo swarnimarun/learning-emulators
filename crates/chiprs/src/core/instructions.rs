@@ -1,5 +1,6 @@
 use color_eyre::{eyre::bail, Result};
 
+#[derive(Debug, Clone)]
 pub enum Instruction {
     // STARTS with 0
     ///00E0 - CLS
@@ -104,6 +105,153 @@ pub enum Instruction {
     LDIx(u8),
     ///Fx65 - LD Vx, [I]
     LDxI(u8),
+}
+
+pub struct Row {
+    name: &'static str,
+    addr: Option<u16>,
+    reg_left: Option<u8>,
+    reg_right: Option<u8>,
+    byte: Option<u8>,
+    n: Option<u8>,
+}
+
+impl Row {
+    fn reg_byte(name: &'static str, reg: u8, byte: u8) -> Self {
+        Self {
+            name,
+            addr: None,
+            reg_left: Some(reg),
+            reg_right: None,
+            byte: Some(byte),
+            n: None,
+        }
+    }
+    fn reg_reg_n(name: &'static str, reg_left: u8, reg_right: u8, n: u8) -> Self {
+        Self {
+            name,
+            addr: None,
+            reg_left: Some(reg_left),
+            reg_right: Some(reg_right),
+            byte: None,
+            n: Some(n),
+        }
+    }
+    fn reg_reg(name: &'static str, reg_left: u8, reg_right: u8) -> Self {
+        Self {
+            name,
+            addr: None,
+            reg_left: Some(reg_left),
+            reg_right: Some(reg_right),
+            byte: None,
+            n: None,
+        }
+    }
+    fn addr_reg(name: &'static str, addr: u16, reg: u8) -> Self {
+        Self {
+            name,
+            addr: Some(addr),
+            reg_left: Some(reg),
+            reg_right: None,
+            byte: None,
+            n: None,
+        }
+    }
+    fn addr(name: &'static str, addr: u16) -> Self {
+        Self {
+            name,
+            addr: Some(addr),
+            reg_left: None,
+            reg_right: None,
+            byte: None,
+            n: None,
+        }
+    }
+    fn name(name: &'static str) -> Self {
+        Self {
+            name,
+            addr: None,
+            reg_left: None,
+            reg_right: None,
+            byte: None,
+            n: None,
+        }
+    }
+    pub fn empty() -> Self {
+        Self {
+            name: "",
+            addr: None,
+            reg_left: None,
+            reg_right: None,
+            byte: None,
+            n: None,
+        }
+    }
+}
+impl std::fmt::Display for Row {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self {
+            name,
+            addr,
+            reg_left,
+            reg_right,
+            byte,
+            n,
+        } = self;
+        let a = addr.map(|x| format!("{x}")).unwrap_or_default();
+        let rl = reg_left.map(|x| format!("{x}")).unwrap_or_default();
+        let rr = reg_right.map(|x| format!("{x}")).unwrap_or_default();
+        let b = byte.map(|x| format!("{x}")).unwrap_or_default();
+        let n = n.map(|x| format!("{x}")).unwrap_or_default();
+        write!(
+            f,
+            "{name:>6} | {a:>5} | {b:>5} | {rl:>5} | {rr:>5} | {n:>5}"
+        )
+    }
+}
+
+impl std::fmt::Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let t = self.clone();
+        let r = match t {
+            Instruction::CLS => Row::name("CLS"),
+            Instruction::RET => Row::name("RET"),
+            Instruction::SYS(x) => Row::addr("SYS", x),
+            Instruction::JPAddr(x) => Row::addr("JP", x),
+            Instruction::CALLAddr(x) => Row::addr("CALL", x),
+            Instruction::SExByte(x, b) => Row::reg_byte("SE", x, b),
+            Instruction::SNExByte(x, b) => Row::reg_byte("SNE", x, b),
+            Instruction::SExy(x, y) => Row::reg_reg("SE", x, y),
+            Instruction::LDxByte(x, b) => Row::reg_byte("LD", x, b),
+            Instruction::ADDxByte(x, b) => Row::reg_byte("ADD", x, b),
+            Instruction::LDxy(x, y) => Row::reg_reg("LD", x, y),
+            Instruction::ORxy(x, y) => Row::reg_reg("OR", x, y),
+            Instruction::ANDxy(x, y) => Row::reg_reg("AND", x, y),
+            Instruction::XORxy(x, y) => Row::reg_reg("XOR", x, y),
+            Instruction::ADDxy(x, y) => Row::reg_reg("ADD", x, y),
+            Instruction::SUBxy(x, y) => Row::reg_reg("SUB", x, y),
+            Instruction::SHRxy(x, y) => Row::reg_reg("SHR", x, y),
+            Instruction::SUBNxy(x, y) => Row::reg_reg("SUBN", x, y),
+            Instruction::SHLxy(x, y) => Row::reg_reg("SHL", x, y),
+            Instruction::SNExy(x, y) => Row::reg_reg("SNE", x, y),
+            Instruction::LDIAddr(x) => Row::addr("LDI", x),
+            Instruction::JPV0Addr(x) => Row::addr_reg("JP", x, 0),
+            Instruction::RNDxByte(x, b) => Row::reg_byte("RND", x, b),
+            Instruction::DRWxyn(x, y, n) => Row::reg_reg_n("DRW", x, y, n),
+            Instruction::SKPx(_) => todo!(),
+            Instruction::SKPNPx(_) => todo!(),
+            Instruction::LDxDt(_) => todo!(),
+            Instruction::LDxK(_) => todo!(),
+            Instruction::LDDTx(_) => todo!(),
+            Instruction::LDSTx(_) => todo!(),
+            Instruction::ADDIx(_) => todo!(),
+            Instruction::LDFx(_) => todo!(),
+            Instruction::LDBx(_) => todo!(),
+            Instruction::LDIx(_) => todo!(),
+            Instruction::LDxI(_) => todo!(),
+        };
+        write!(f, "{r}")
+    }
 }
 
 fn nibbles(v: u16) -> (u8, u8, u8, u8) {
