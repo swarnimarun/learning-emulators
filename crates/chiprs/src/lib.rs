@@ -89,6 +89,14 @@ impl ApplicationHandler for App {
             winit::event::WindowEvent::Resized(size) => {
                 info!("resized window: {size:?}");
                 window.request_redraw();
+                // resize with pixel buffer
+                if let Some(Processor {
+                    framebuffer: Some(fb),
+                    ..
+                }) = processor
+                {
+                    fb.resize(size.width, size.height);
+                }
             }
             winit::event::WindowEvent::CloseRequested => {}
             winit::event::WindowEvent::RedrawRequested => {

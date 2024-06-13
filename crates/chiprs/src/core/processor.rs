@@ -54,7 +54,7 @@ pub struct Processor {
     stack_pointer: u8,
     stack: [u16; 16],
     memory: Memory,
-    framebuffer: Option<FrameBuffer>,
+    pub framebuffer: Option<FrameBuffer>,
 }
 
 impl Processor {

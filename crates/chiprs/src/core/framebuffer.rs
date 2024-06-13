@@ -12,6 +12,9 @@ pub struct FrameBuffer {
 }
 
 impl FrameBuffer {
+    pub fn resize(&mut self, width: u32, height: u32) -> bool {
+        self.p.resize_surface(width, height).is_ok()
+    }
     pub fn draw_at(&mut self, x: u8, y: u8, ns: &[u8]) -> bool {
         let mut f = false;
         let frame = self.p.frame_mut();
